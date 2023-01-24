@@ -4,13 +4,20 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Web.Razor.Generator;
 using static System.Net.WebRequestMethods;
 
 internal class Program
 {
+    private const string UrlMaskWithQuotes = @"""http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?""";
+    private const string UrlMask = @"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?";
+    private const string UrlMaskWithHref = $"href=({UrlMaskWithQuotes})";
     private async static Task Main(string[] args)
     {
         string url = Console.ReadLine();
+        string siteName = GetSiteName(url);
+        Console.WriteLine("Loading...");
         List<string> urlsFromWebSite = GetUrlsFromWebSite(url);
         List<string> urlsFromSitemap = GetUrlsFromSiteMap(url);
 
@@ -71,7 +78,7 @@ internal class Program
         counter = 1;
         urlsWithTimings.OrderBy(x => x.TimeTaken).ToList().ForEach(x =>
         {
-            Console.WriteLine($"{counter} {x.Url}            {x.TimeTaken} ms");
+            Console.WriteLine($"{counter} {x.Url}            {x.TimeTaken}");
             counter++;
         });
         Console.WriteLine();
@@ -85,9 +92,22 @@ internal class Program
 
     private static List<string> GetUrlsFromWebSite(string url)
     {
-       
+ 
         var html = GetHtml(url);
-        var result = GetUrlsFromContent(html);
+        var siteName = GetSiteName(url);
+        var newUrls = GetUrlsFromHtml(html, siteName);
+        var result = new List<string>();
+        
+        newUrls.ForEach(x =>
+        {
+            result.Add(x);
+            
+            var iHtml = GetHtml(x);
+            var i = GetUrlsFromHtml(iHtml, siteName);
+            i.ForEach(i => result.Add(i));
+
+
+        });
         return result;
     }
     private static string GetHtml(string url)
@@ -108,17 +128,30 @@ internal class Program
         }
     }
 
-    public static List<string> GetUrlsFromContent(string htmlCode)
+    public static List<string> GetUrlsFromHtml(string htmlCode, string siteName)
     {
-        var result = new List<string>();    
-        string mask2 = @"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?";
-        var linkParser = new Regex(mask2, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        foreach (Match m in linkParser.Matches(htmlCode))
-            result.Add(m.Value);
+        
+        var result = new List<string>();
+        StringBuilder urlsWithHref = new StringBuilder();
+        
+        var linkWithHrefParser = new Regex(UrlMaskWithHref, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        foreach (Match m in linkWithHrefParser.Matches(htmlCode))
+            urlsWithHref.Append(m.Value);
+        var linkParser = new Regex(UrlMask, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        foreach (Match m in linkParser.Matches(urlsWithHref.ToString()))
+        {
+            if (!result.Contains(m.Value) && !m.Value.Contains("js") && !m.Value.Contains("ajax") &&
+                m.Value.StartsWith($"https://{siteName}/") && m.Value.EndsWith("/"))
+            {
+                result.Add(m.Value);
+            }
+        }
+            
         return result;
     }
     private static List<string> GetUrlsFromSiteMap(string url)
     {
+        string siteName = GetSiteName(url);
         HttpResponseMessage response;
         url = $"{url}/sitemap.xml";
         using (var client = new HttpClient())
@@ -126,8 +159,17 @@ internal class Program
             client.BaseAddress = new Uri(url);
             response = client.GetAsync(url).Result;
         }
-
-        var result = GetUrlsFromContent(response.Content.ReadAsStringAsync().Result);
+        List<string> result = new List<string>();
+        var linkWithHrefParser = new Regex(UrlMask, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        foreach (Match m in linkWithHrefParser.Matches(response.Content.ReadAsStringAsync().Result))
+        {
+            if (!result.Contains(m.Value) && !m.Value.Contains("js") && !m.Value.Contains("ajax") &&
+                m.Value.StartsWith($"https://{siteName}/"))
+            {
+                result.Add(m.Value);
+            }
+        }
+            
         return result;
     }
     private static List<string> GetUniqueUrls(List<string> target, List<string> sours)
@@ -145,12 +187,11 @@ internal class Program
         return result;
     }
 
-    private async static Task<double> GetTimeResponseAsync(string url)
+    private async static Task<string> GetTimeResponseAsync(string url)
     {
         try
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-
             System.Diagnostics.Stopwatch timer = new Stopwatch();
             timer.Start();
             
@@ -160,11 +201,11 @@ internal class Program
 
             TimeSpan timeTaken = timer.Elapsed;
 
-            return timeTaken.TotalMilliseconds;
+            return $"{timeTaken.TotalMilliseconds.ToString()} ms";
         }
-        catch (Exception )
+        catch (Exception ex)
         {
-            return 0;
+            return ex.Message;
         }
         
         
@@ -173,7 +214,14 @@ internal class Program
     private  class UrlsWithTiming
     {
         public string? Url { get; set; }
-        public double TimeTaken { get; set; }
+        public string? TimeTaken { get; set; }
+    }
+
+    private static string GetSiteName(string url)
+    {
+        
+        Match match = Regex.Match(url, @"https://(.*?)/");
+        return match.Groups[1].Value;
     }
 
  
