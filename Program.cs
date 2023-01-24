@@ -17,9 +17,10 @@ internal class Program
     {
         string url = Console.ReadLine();
         string siteName = GetSiteName(url);
-        Console.WriteLine("Loading...");
+        Console.WriteLine("Loading... (more then 10 seconds)");
         List<string> urlsFromWebSite = await GetUrlsFromWebSiteAsync(url);
-        List<string> urlsFromSitemap = GetUrlsFromSiteMap(url);
+        List<string> urlsFromSitemap = await GetUrlsFromSiteMapAsync(url);
+        await Task.Delay(10000);
 
         List<string> uniqueUrlsFromWebSite = GetUniqueUrls(urlsFromWebSite, urlsFromSitemap);
         List<string> uniqueUrlsFromSitemap = GetUniqueUrls(urlsFromSitemap, uniqueUrlsFromWebSite);
@@ -149,7 +150,7 @@ internal class Program
             
         return result;
     }
-    private static List<string> GetUrlsFromSiteMap(string url)
+    private async static Task<List<string>> GetUrlsFromSiteMapAsync(string url)
     {
         string siteName = GetSiteName(url);
         HttpResponseMessage response;
@@ -157,7 +158,7 @@ internal class Program
         using (var client = new HttpClient())
         {
             client.BaseAddress = new Uri(url);
-            response = client.GetAsync(url).Result;
+            response = await client.GetAsync(url);
         }
         List<string> result = new List<string>();
         var linkWithHrefParser = new Regex(UrlMask, RegexOptions.Compiled | RegexOptions.IgnoreCase);
