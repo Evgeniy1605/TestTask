@@ -18,7 +18,7 @@ internal class Program
         string url = Console.ReadLine();
         string siteName = GetSiteName(url);
         Console.WriteLine("Loading...");
-        List<string> urlsFromWebSite = GetUrlsFromWebSite(url);
+        List<string> urlsFromWebSite = await GetUrlsFromWebSiteAsync(url);
         List<string> urlsFromSitemap = GetUrlsFromSiteMap(url);
 
         List<string> uniqueUrlsFromWebSite = GetUniqueUrls(urlsFromWebSite, urlsFromSitemap);
@@ -90,19 +90,19 @@ internal class Program
 
     }
 
-    private static List<string> GetUrlsFromWebSite(string url)
+    private async static Task< List<string>> GetUrlsFromWebSiteAsync(string url)
     {
  
-        var html = GetHtml(url);
+        var html = await GetHtmlAsync(url);
         var siteName = GetSiteName(url);
         var newUrls = GetUrlsFromHtml(html, siteName);
         var result = new List<string>();
         
-        newUrls.ForEach(x =>
+        newUrls.ForEach(async x =>
         {
             result.Add(x);
             
-            var iHtml = GetHtml(x);
+            var iHtml = await GetHtmlAsync(x);
             var i = GetUrlsFromHtml(iHtml, siteName);
             i.ForEach(i => result.Add(i));
 
@@ -110,14 +110,14 @@ internal class Program
         });
         return result;
     }
-    private static string GetHtml(string url)
+    private async static Task< string> GetHtmlAsync(string url)
     {
         try
         {
             string? htmlCode;
             using (WebClient client = new WebClient())
             {
-                htmlCode = client.DownloadString(url);
+                htmlCode = await client.DownloadStringTaskAsync(url); 
             }
             return htmlCode;
         }
