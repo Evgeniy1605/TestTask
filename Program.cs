@@ -46,8 +46,7 @@ internal class Program
 
         Console.WriteLine("");
         Console.WriteLine("Timing");
-        Console.WriteLine("Loading...");
-        Console.WriteLine("(The maximum time of loading is 15 seconds)");
+        Console.WriteLine("Loading...");;
         List<UrlsWithTiming> urlsWithTimings = new List<UrlsWithTiming>();
         urlsFromSitemap.ForEach(async s =>
         {
@@ -66,14 +65,10 @@ internal class Program
         });
         int numberOdUrls = urlsFromSitemap.Count + urlsFromWebSite.Count;
         counter = 0;
-        while (urlsWithTimings.Count <= numberOdUrls)
+        while (urlsWithTimings.Count != numberOdUrls)
         {
             await Task.Delay(1000);
-            counter++;
-            if (counter == 15)
-            {
-                break;
-            }
+            
         }
         Console.WriteLine();
         counter = 1;
@@ -96,19 +91,25 @@ internal class Program
  
         var html = await GetHtmlAsync(url);
         var siteName = GetSiteName(url);
-        var newUrls = GetUrlsFromHtml(html, siteName);
-        var result = new List<string>();
         
-        newUrls.ForEach(async x =>
+        var result = new List<string>();
+        var Urls = GetUrlsFromHtml(html, siteName);
+        while (Urls.Count != 0)
         {
-            result.Add(x);
-            
-            var iHtml = await GetHtmlAsync(x);
-            var i = GetUrlsFromHtml(iHtml, siteName);
-            i.ForEach(i => result.Add(i));
-
-
-        });
+            var i = 0;
+            var htmlcode = await GetHtmlAsync(Urls[i]);
+            var urlsList = GetUrlsFromHtml(htmlcode, siteName);
+            urlsList.ForEach(x =>
+            {
+                if (!result.Contains(x) && Urls.Contains(x))
+                {
+                    Urls.Add(x);
+                }
+            });
+            result.Add(Urls[i]);
+            Urls.Remove(Urls[i]);
+        }
+        
         return result;
     }
     private async static Task< string> GetHtmlAsync(string url)
@@ -133,21 +134,15 @@ internal class Program
     {
         
         var result = new List<string>();
-        StringBuilder urlsWithHref = new StringBuilder();
-        
-        var linkWithHrefParser = new Regex(UrlMaskWithHref, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        foreach (Match m in linkWithHrefParser.Matches(htmlCode))
-            urlsWithHref.Append(m.Value);
         var linkParser = new Regex(UrlMask, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        foreach (Match m in linkParser.Matches(urlsWithHref.ToString()))
+        foreach (Match m in linkParser.Matches(htmlCode))
         {
             if (!result.Contains(m.Value) && !m.Value.Contains("js") && !m.Value.Contains("ajax") &&
-                m.Value.StartsWith($"https://{siteName}/") && m.Value.EndsWith("/"))
+                m.Value.StartsWith($"https://{siteName}/") || m.Value.StartsWith("/") && m.Value.EndsWith("/"))
             {
                 result.Add(m.Value);
             }
-        }
-            
+        } //
         return result;
     }
     private async static Task<List<string>> GetUrlsFromSiteMapAsync(string url)
@@ -165,7 +160,8 @@ internal class Program
         foreach (Match m in linkWithHrefParser.Matches(response.Content.ReadAsStringAsync().Result))
         {
             if (!result.Contains(m.Value) && !m.Value.Contains("js") && !m.Value.Contains("ajax") &&
-                m.Value.StartsWith($"https://{siteName}/"))
+                m.Value.StartsWith($"https://{siteName}/" )
+                && !m.Value.Contains("png") && !m.Value.EndsWith (".jpg") && !m.Value.EndsWith(".raw") && !m.Value.EndsWith(".svg"))
             {
                 result.Add(m.Value);
             }
