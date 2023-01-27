@@ -51,6 +51,7 @@ internal class Program
         List<UrlsWithTiming> urlsWithTimings = new List<UrlsWithTiming>();
         
         var allUrls = new List<string>();
+        allUrls.Add(url);
         urlsFromWebSite.ForEach((url) =>
         {
             allUrls.Add(url);
@@ -63,7 +64,7 @@ internal class Program
             }
         });
 
-        allUrls.ForEach(async s =>
+        allUrls.Distinct().ToList().ForEach(async s =>
         {
             var urlWithTiming = new UrlsWithTiming();
             urlWithTiming.Url = s;
