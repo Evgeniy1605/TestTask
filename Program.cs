@@ -18,9 +18,10 @@ internal class Program
         
         string siteName = GetSiteName(url);
         Console.WriteLine("Loading... ");
-        List<string> urlsFromWebSite = await GetUrlsFromWebSiteAsync(url);
-        List<string> urlsFromSitemap = await GetUrlsFromSiteMapAsync(url);
-;
+        List<string> urlsFromWebSite = (await GetUrlsFromWebSiteAsync(url)).Distinct().ToList();
+        List<string> urlsFromSitemap = (await GetUrlsFromSiteMapAsync(url)).Distinct().ToList();
+
+        
 
         List<string> uniqueUrlsFromWebSite = GetUniqueUrls(urlsFromWebSite, urlsFromSitemap);
         List<string> uniqueUrlsFromSitemap = GetUniqueUrls(urlsFromSitemap, urlsFromWebSite);
@@ -83,7 +84,7 @@ internal class Program
         }
         Console.WriteLine();
         counter = 1;
-        urlsWithTimings.OrderBy(x => x.TimeTaken).ToList().ForEach(x =>
+        urlsWithTimings.Distinct().OrderBy(x => x.TimeTaken).ToList().ForEach(x =>
         {
             Console.WriteLine($"{counter} {x.Url}            {x.TimeTaken}");
             counter++;
@@ -116,10 +117,28 @@ internal class Program
             {
                 if (!result.Contains(x) && !Urls.Contains(x))
                 {
-                    Urls.Add(x);
+
+                    if (x.EndsWith("/"))
+                    {
+                        result.Add(x);
+                    }
+                    else if (!x.EndsWith(".json") && !x.EndsWith(".xml"))
+                    {
+                        result.Add($"{x}/");
+                    }
                 }
             });
-            result.Add(Urls[i]);
+            
+            if (Urls[i].EndsWith("/"))
+            {
+                result.Add(Urls[i]);
+            }
+            else if (!Urls[i].EndsWith("/") && !Urls[i].EndsWith(".json") && !Urls[i].EndsWith(".xml") && !Urls[i].EndsWith(".woff") && !Urls[i].EndsWith(".txt") && !Urls[i].EndsWith(".pdf") && !Urls[i].EndsWith(".doc"))
+            {
+                result.Add($"{Urls[i]}/");
+            }
+            
+
             Urls.Remove(Urls[i]);
         }
         
