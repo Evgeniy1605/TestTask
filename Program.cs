@@ -14,7 +14,8 @@ internal class Program
            
     private async static Task Main(string[] args)
     {
-        string url = Console.ReadLine();
+        string url = CheckMainUrl(Console.ReadLine());
+        
         string siteName = GetSiteName(url);
         Console.WriteLine("Loading... ");
         List<string> urlsFromWebSite = await GetUrlsFromWebSiteAsync(url);
@@ -263,5 +264,14 @@ internal class Program
         return match.Groups[1].Value;
     }
 
- 
+    private static string CheckMainUrl(string url)
+    {
+        if (!url.EndsWith("/"))
+        {
+            return $"{url}/";
+        }
+        return url;
+    }
+
+
 }
