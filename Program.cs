@@ -232,6 +232,41 @@ internal class Program
                 }
             }
         });
+        //
+        if (result.Count == 0)
+        {
+            var content = await GetHtmlAsync(url);
+            var urls = GetUrlsFromHtml(content, siteName);
+            urls.ForEach(x =>
+            {
+                if (x.StartsWith("/"))
+                {
+                    result.Add($"https://{siteName}{x}");
+
+                    if (x.EndsWith("/"))
+                    {
+                        result.Add(x);
+                    }
+                    else if (!x.EndsWith(".json") && !x.EndsWith(".xml"))
+                    {
+                        result.Add($"{x}/");
+                    }
+
+                }
+                else
+                {
+                    if (x.EndsWith("/"))
+                    {
+                        result.Add(x);
+                    }
+                    else if (!x.EndsWith(".json") && !x.EndsWith(".xml"))
+                    {
+                        result.Add($"{x}/");
+                    }
+                }
+                
+            });
+        }
         return result;
     }
     private static List<string> GetUniqueUrls(List<string> target, List<string> sours)
