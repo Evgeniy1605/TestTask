@@ -244,35 +244,7 @@ internal class Program
                     result.Add(item);
                 }
             }
-            /*urls.ForEach(x =>
-            {
-                if (x.StartsWith("/"))
-                {
-                    result.Add($"https://{siteName}{x}");
-
-                    if (x.EndsWith("/"))
-                    {
-                        result.Add(x);
-                    }
-                    else if (!x.EndsWith(".json") && !x.EndsWith(".xml"))
-                    {
-                        result.Add($"{x}/");
-                    }
-
-                }
-                else
-                {
-                    if (x.EndsWith("/"))
-                    {
-                        result.Add(x);
-                    }
-                    else if (!x.EndsWith(".json") && !x.EndsWith(".xml"))
-                    {
-                        result.Add($"{x}/");
-                    }
-                }
-                
-            });*/
+            
         }
         return result;
     }
