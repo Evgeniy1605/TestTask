@@ -123,7 +123,8 @@ internal class Program
                     {
                         result.Add(x);
                     }
-                    else if (!x.EndsWith(".json") && !x.EndsWith(".xml"))
+                    
+                    else if (IsUrlFile(x) == false)
                     {
                         result.Add($"{x}/");
                     }
@@ -134,11 +135,12 @@ internal class Program
             {
                 result.Add(Urls[i]);
             }
-            else if (!Urls[i].EndsWith("/") && !Urls[i].EndsWith(".json") && !Urls[i].EndsWith(".xml") && !Urls[i].EndsWith(".woff") && !Urls[i].EndsWith(".txt") && !Urls[i].EndsWith(".pdf") && !Urls[i].EndsWith(".doc"))
+            
+
+            else if (!Urls[i].EndsWith("/") && IsUrlFile(Urls[i]) == false)
             {
                 result.Add($"{Urls[i]}/");
             }
-            
 
             Urls.Remove(Urls[i]);
         }
@@ -172,8 +174,7 @@ internal class Program
         var contentFromHref = regex.Matches(htmlCode).OfType<Match>().Select(m => m.Groups["href"].Value).ToList();
         contentFromHref.ForEach(m =>
         {
-            if ( (m.StartsWith("/") || m.StartsWith($"https://{siteName}/")) && !m.EndsWith(".js") && 
-                !m.EndsWith(".svg") && !m.EndsWith(".png") && !m.EndsWith(".css"))
+            if ( (m.StartsWith("/") || m.StartsWith($"https://{siteName}/")) && IsUrlFile(m) == false)
             {
                 
                 if (m.StartsWith("/"))
@@ -218,8 +219,7 @@ internal class Program
         var contentFromHref = regex.Matches(code).OfType<Match>().Select(m => m.Groups["href"].Value).ToList();
         allUrls.ForEach(m =>
         {
-            if ((m.StartsWith("/") || m.StartsWith($"https://{siteName}/")) && !m.EndsWith(".js") &&
-                !m.EndsWith(".svg") && !m.EndsWith(".png") && !m.EndsWith(".css"))
+            if ((m.StartsWith("/") || m.StartsWith($"https://{siteName}/")) && (m.EndsWith(".xml") || IsUrlFile(m) == false))
             {
                 
                 if (m.StartsWith("/"))
@@ -237,7 +237,14 @@ internal class Program
         {
             var content = await GetHtmlAsync(url);
             var urls = GetUrlsFromHtml(content, siteName);
-            urls.ForEach(x =>
+            if (urls.Count() != 0)
+            {
+                foreach (var item in urls)
+                {
+                    result.Add(item);
+                }
+            }
+            /*urls.ForEach(x =>
             {
                 if (x.StartsWith("/"))
                 {
@@ -265,7 +272,7 @@ internal class Program
                     }
                 }
                 
-            });
+            });*/
         }
         return result;
     }
@@ -326,6 +333,19 @@ internal class Program
             return $"{url}/";
         }
         return url;
+    }
+
+    private static bool IsUrlFile(string url)
+    {
+        string extention = Path.GetExtension(url);
+        if (extention == ".html" || extention == "")
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
 
 
