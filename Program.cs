@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web.Razor.Generator;
+using System.Xml.Schema;
 using static System.Net.WebRequestMethods;
 
 internal class Program
@@ -29,67 +30,62 @@ internal class Program
         Console.WriteLine("Urls FOUNDED IN SITEMAP.XML but not founded after crawling a web site");
         Console.WriteLine("Url");
         int counter = 1;
-        uniqueUrlsFromSitemap.ForEach(s =>
+        foreach (var item in uniqueUrlsFromSitemap)
         {
-            Console.WriteLine($"{counter} {s}");
+            Console.WriteLine($"{counter} {item}");
             counter++;
-        });
+        }
+        
 
         Console.WriteLine();
         Console.WriteLine("Urls FOUNDED BY CRAWLING THE WEBSITE but not in sitemap.xml");
         Console.WriteLine("Url");
         counter = 1;
-        uniqueUrlsFromWebSite.ForEach(s =>
+        foreach(var item in uniqueUrlsFromWebSite)
         {
-            Console.WriteLine($"{counter} {s}");
+            Console.WriteLine($"{counter} {item}");
             counter++;
-        });
+        }
+        
 
         Console.WriteLine("");
         Console.WriteLine("Timing");
-        Console.WriteLine("Loading... (It takes less than 10 seconds)");;
+        Console.WriteLine("Loading... ");
         List<UrlsWithTiming> urlsWithTimings = new List<UrlsWithTiming>();
         
         var allUrls = new List<string>();
         allUrls.Add(url);
-        urlsFromWebSite.ForEach((url) =>
+        foreach (var item in urlsFromWebSite)
         {
-            allUrls.Add(url);
-        });
-        urlsFromSitemap.ForEach((url) =>
+            allUrls.Add(item);
+        }
+        foreach (var item in urlsFromSitemap)
         {
-            if (allUrls.FirstOrDefault(x => x == url) == null)
+            if (allUrls.FirstOrDefault(x => x == item) == null)
             {
-                allUrls.Add(url);
-            }
-        });
-
-        allUrls.Distinct().ToList().ForEach(async s =>
-        {
-            var urlWithTiming = new UrlsWithTiming();
-            urlWithTiming.Url = s;
-            urlWithTiming.TimeTaken = await GetTimeResponseAsync(s);
-            urlsWithTimings.Add(urlWithTiming);
-        });
-        await Task.Delay(3000);
-        int numberOdUrls = allUrls.Count;
-        counter = 0;
-        while (urlsWithTimings.Count != allUrls.Count)
-        {
-            await Task.Delay(1000);
-            counter++;
-            if (counter == 6)
-            {
-                break;
+                allUrls.Add(item);
             }
         }
+       
+        foreach(var item in allUrls.Distinct().ToList())
+        {
+            var urlWithTiming = new UrlsWithTiming();
+            urlWithTiming.Url = item;
+            urlWithTiming.TimeTaken = await GetTimeResponseAsync(item);
+            urlsWithTimings.Add(urlWithTiming);
+        }
+        
+        int numberOdUrls = allUrls.Count;
+        counter = 0;
+        
         Console.WriteLine();
         counter = 1;
-        urlsWithTimings.Distinct().OrderBy(x => x.TimeTaken).ToList().ForEach(x =>
+        foreach (var item in urlsWithTimings.Distinct().OrderBy(x => x.TimeTaken).ToList())
         {
-            Console.WriteLine($"{counter} {x.Url}            {x.TimeTaken}");
+            Console.WriteLine($"{counter} {item.Url}            {item.TimeTaken}");
             counter++;
-        });
+        }
+        
         Console.WriteLine();
         Console.WriteLine($"Urls(html documents) found after crawling a website: {urlsFromWebSite.Count} ");
         Console.WriteLine();
@@ -174,7 +170,7 @@ internal class Program
         var contentFromHref = regex.Matches(htmlCode).OfType<Match>().Select(m => m.Groups["href"].Value).ToList();
         contentFromHref.ForEach(m =>
         {
-            if ( (m.StartsWith("/") || m.StartsWith($"https://{siteName}/")) && IsUrlFile(m) == false)
+            if ( (m.StartsWith("/") || m.StartsWith($"https://{siteName}/")) && IsUrlFile(m) == false && !m.Contains("#"))
             {
                 
                 if (m.StartsWith("/"))
