@@ -189,7 +189,7 @@ internal class Program
     {
         string siteName = GetSiteName(url);
         HttpResponseMessage response;
-        url = $"{url}/sitemap.xml";
+        url = $"{url}sitemap.xml";
         using (var client = new HttpClient())
         {
             client.BaseAddress = new Uri(url);
